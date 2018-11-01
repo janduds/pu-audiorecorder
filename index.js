@@ -1,108 +1,36 @@
-//var bytes = require('bytes');
-
-var EVENTS = ['start', 'stop', 'pause', 'resume'];
+var EVENTS = ['start', 'stop', 'resume'];
 var TYPES = ['audio/webm', 'audio/ogg', 'audio/wav'];
-var recorder, list, recordFull, recordParts, pause, resume, stop, request;
-// We'll store the value of te bars we want to draw in here
-const bars = []
+var recorder, list, recordFull, stop;
+var timer_elem, seconds = 0, minutes = 0, hours = 0, timer_timeout, last_time;
 
-// An instance of AudioContext
-const audioContext = new AudioContext();
 
-// This will become our input MediaStreamSourceNode
-let input = null;
-
-// This will become our AnalyserNode
-let analyser = null;
-
-// This will become our ScriptProcessorNode
-let scriptProcessor = null;
+// Decibel Meter Vars
+var bars = [];
+var audioContext = new AudioContext();
+var input = null;
+var analyser = null;
+var scriptProcessor = null;
+var drawing = false;
 
 // Canvas related variables
-const barWidth = 2;
-const barGutter = 2;
-const barColor = "#49F1D5";
+var barWidth = 5;
+var barGutter = barWidth / 1.5;
+var barColor = "#fff";
 
-let canvas = null;
-let canvasContext = null;
-let width = 0;
-let height = 0;
-let halfHeight = 0;
-let drawing = false;
-
-/**
- * Process the input of the ScriptProcessorNode.
- *
- * @param {audioProcessingEvent}
- */
-const processInput = audioProcessingEvent => {  
-    // Create a new Uint8Array to store the analyser's frequencyBinCount 
-    const tempArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // Get the byte frequency data from our array
-    analyser.getByteFrequencyData(tempArray);
-    
-    // Calculate the average volume and store that value in our bars Array
-    bars.push(getAverageVolume(tempArray));
-
-    // Render the bars
-    renderBars(bars);
-};
-
-/**
- * Calculate the average value from the supplied array.
- *
- * @param {Array<Int>}
- */
-const getAverageVolume = array => {    
-    const length = array.length;
-    let values = 0;
-    let i = 0;
-
-    // Loop over the values of the array, and count them
-    for (; i < length; i++) {
-        values += array[i];
-    }
-
-    // Return the avarag
-    return values / length;
-};
-
-/**
- * Render the bars.
- */
-const renderBars = () => {  
-    if (!drawing) {
-        drawing = true;
-
-        window.requestAnimationFrame(() => {
-            canvasContext.clearRect(0, 0, width, height);
-
-            bars.forEach((bar, index) => {
-                canvasContext.fillStyle = barColor;
-                
-                // Top part of the bar
-                canvasContext.fillRect((index * (barWidth + barGutter)), (halfHeight - (halfHeight * (bar / 100))), barWidth, (halfHeight * (bar / 100)));
-
-                // Bottom part of the bars
-                canvasContext.fillRect((index * (barWidth + barGutter)), halfHeight, barWidth, (halfHeight * (bar / 100)));
-            });
-
-            drawing = false;
-        });
-    }
-};
-
+var canvas, canvas2 = null;
+var canvasContext = null;
+var width = 0;
+var height = 0;
+var halfHeight = 0;
+var max_vol;
 
 
 document.addEventListener('DOMContentLoaded', function () {
     list = document.getElementById('list');
-    recordParts = document.getElementById('sec');
     recordFull = document.getElementById('record');
-    request = document.getElementById('request');
-    resume = document.getElementById('resume');
-    pause = document.getElementById('pause');
     stop = document.getElementById('stop');
+    timer_elem = document.getElementById('timer');
+
     if (MediaRecorder.notSupported) {
         list.style.display = 'none';
         document.getElementById('controls').style.display = 'none';
@@ -114,99 +42,129 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('formats').innerText = 'Format: ' + TYPES.filter(function (i) {
         return MediaRecorder.isTypeSupported(i);
     }).join(', ');
-//    recordParts.addEventListener('click', startRecording.bind(null, 'parts'));
+
+
     recordFull.addEventListener('click', startRecording.bind(null, 'full'));
-    request.addEventListener('click', requestData);
-    resume.addEventListener('click', resumeRecording);
-    pause.addEventListener('click', pauseRecording);
+
     stop.addEventListener('click', stopRecording);
-//    recordParts.disabled = false;
+
     recordFull.disabled = false;
-    
-    
+    stop.style.display = "none";
+
     // Get the canvas element and context
-    canvas = document.querySelector('canvas');
+    waveform = document.querySelector('.waveform');
+    canvas = document.getElementById('canvas-1');
+    canvas2 = document.getElementById('canvas-2');
     canvasContext = canvas.getContext('2d');
+    canvasContext2 = canvas2.getContext('2d');
 
     // Set the dimensions
     width = canvas.offsetWidth;
-    height = canvas.offsetHeight;
-    halfHeight = height / 1.5;
+    height = 32;
+
+    halfHeight = height / 2;
 
     // Set the size of the canvas context to the size of the canvas element
     canvasContext.canvas.width = width;
     canvasContext.canvas.height = height;
-    
+    canvasContext2.canvas.width = width;
+    canvasContext2.canvas.height = height;
+
+
+    for (var i = 0; i <= width; ) {
+        canvasContext2.fillStyle = '#aaaaaa';
+        canvasContext2.fillRect(i, 0, barWidth, height);
+        i = (i + barWidth) + barGutter;
+    }
+
+
 });
+
+function add() {
+    seconds++;
+    if (seconds >= 60) {
+        seconds = 0;
+        minutes++;
+        if (minutes >= 60) {
+            minutes = 0;
+            hours++;
+        }
+    }
+    timer_elem.textContent = formatTime(hours, minutes, seconds);
+    timer();
+}
+
+function formatTime(hours, minutes, seconds) {
+    return (hours ? (hours > 9 ? hours : "0" + hours) : "00") + ":" + (minutes ? (minutes > 9 ? minutes : "0" + minutes) : "00") + ":" + (seconds > 9 ? seconds : "0" + seconds);
+}
+
+function timer() {
+    timer_timeout = setTimeout(add, 1000);
+}
 
 function startRecording(type) {
     list.innerHTML = '';
-    navigator.mediaDevices.getUserMedia({audio: true}).then(function (stream) {
-        recorder = new MediaRecorder(stream);
-        EVENTS.forEach(function (name) {
-            recorder.addEventListener(name, changeState.bind(null, name));
-        });
-        
-        recorder.addEventListener('dataavailable', saveRecord);
-        
-        if (type === 'full') {
-            recorder.start();
-        } else {
-            recorder.start(1000);
-        }
-        
-        // Create the audio nodes
-        input = audioContext.createMediaStreamSource(stream);
-        analyser = audioContext.createAnalyser();
-        scriptProcessor = audioContext.createScriptProcessor();
+    navigator.mediaDevices.getUserMedia({audio: true})
+            .then(function (stream) {
+                recorder = new MediaRecorder(stream);
+                EVENTS.forEach(function (name) {
+                    recorder.addEventListener(name, changeState.bind(null, name));
+                });
+                recorder.addEventListener('dataavailable', saveRecord);
+                if (type === 'full') {
+                    recorder.start();
+                } else {
+                    recorder.start(1000);
+                }
 
-        analyser.smoothingTimeConstant = 0.3;
-        analyser.fftSize = 1024;
+                timer();
+                timer_elem.textContent = formatTime(hours, minutes, seconds);
 
-        // Connect the audio nodes
-        input.connect(analyser);
-        analyser.connect(scriptProcessor);
-        scriptProcessor.connect(audioContext.destination);
+                // decibel
 
-        // Add an event handler
-        scriptProcessor.onaudioprocess = processInput;
+                input = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                scriptProcessor = audioContext.createScriptProcessor();
 
-    });
-    
-    
-//    recordParts.blur();
-    recordFull.blur();
+                analyser.smoothingTimeConstant = 0.3;
+                analyser.fftSize = 1024;
+
+                input.connect(analyser);
+                analyser.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+
+                scriptProcessor.onaudioprocess = processInput;
+
+
+            })
+            .catch(function (err) {
+                /* handle the error */
+                window.console.log(err);
+            });
+
+    recordFull.style.display = "none";
+    stop.style.display = "block";
+    timer_elem.style.display = "block";
+    waveform.style.display = "block";
+    recordFull.innerHTML = "Record";
 }
 
 function stopRecording() {
     recorder.stop();
+    clearTimeout(timer_timeout);
+    seconds = 0;
     recorder.stream.getTracks()[0].stop();
     stop.blur();
-}
-
-function pauseRecording() {
-    recorder.pause();
-    pause.blur();
-}
-
-function resumeRecording() {
-    recorder.resume();
-    resume.blur();
-}
-
-function requestData() {
-    recorder.requestData();
-    request.blur();
+    recordFull.style.display = "block";
+    stop.style.display = "none";
+    timer_elem.style.display = "none";
+    waveform.style.display = "none";
+    input = null;
+    recordFull.innerHTML = "Retry";
 }
 
 function saveRecord(e) {
     var li = document.createElement('li');
-    var strong = document.createElement('strong');
-    strong.innerText = 'dataavailable: ';
-    li.appendChild(strong);
-//    var s = document.createElement('span');
-//    s.innerText = e.data.type +', ' + bytes(e.data.size, {unitSeparator: ' ', decimalPlaces: 0});
-//    li.appendChild(s);
     var audio = document.createElement('audio');
     audio.controls = true;
     audio.src = URL.createObjectURL(e.data);
@@ -215,32 +173,57 @@ function saveRecord(e) {
 }
 
 function changeState(eventName) {
-    var li = document.createElement('li');
-    li.innerHTML = '<strong>' + eventName + ': </strong>' + recorder.state;
+    var debug_txt = "";
+    debug_txt = eventName + ' ' + recorder.state;
     if (eventName === 'start') {
-        li.innerHTML += ', ' + recorder.mimeType;
+        debug_txt += ', ' + recorder.mimeType;
     }
-    list.appendChild(li);
+    window.console.log(debug_txt);
     if (recorder.state === 'recording') {
-//        recordParts.disabled = true;
         recordFull.disabled = true;
-        request.disabled = false;
-        resume.disabled = true;
-        pause.disabled = false;
         stop.disabled = false;
     } else if (recorder.state === 'paused') {
-//        recordParts.disabled = true;
         recordFull.disabled = true;
-        request.disabled = false;
-        resume.disabled = false;
-        pause.disabled = true;
         stop.disabled = false;
     } else if (recorder.state === 'inactive') {
-//        recordParts.disabled = false;
         recordFull.disabled = false;
-        request.disabled = true;
-        resume.disabled = true;
-        pause.disabled = true;
         stop.disabled = true;
+    }
+}
+
+function processInput(audioProcessingEvent) {
+    var tempArr = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(tempArr);
+    bars.push(getAverageVolume(tempArr));
+    renderBars(getAverageVolume(tempArr));
+}
+
+function getAverageVolume(array) {
+    var len = array.length;
+    max_vol = len;
+    var values = 0;
+    for (var i = 0; i < len; i++) {
+        values += array[i];
+    }
+    return values / len;
+}
+
+function renderBars(bar) {
+    
+    bar = (bar * width / max_vol) * 10;
+    window.console.log(bar);
+    if (!drawing) {
+        drawing = true;
+        window.requestAnimationFrame(function () {
+            canvasContext.clearRect(0, 0, width, height);
+            for(var i = 0;i<=bar;) {
+                canvasContext.fillStyle = "orange";
+                canvasContext.fillRect(i, 0, barWidth, height);
+                i = (i + barWidth) + barGutter;
+            }
+             drawing = false;
+        });
+
+        drawing = false;
     }
 }

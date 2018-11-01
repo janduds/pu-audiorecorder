@@ -1,0 +1,126 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+body {
+    color: #fff;
+    background: #333;
+}
+#record {
+    cursor: pointer;
+}
+a {
+    color: #009387;
+}
+a:visited {
+    color: #930087;
+}
+body {
+    margin: 1rem;
+    font-family: sans-serif;
+}
+article {
+    max-width: 50%;
+    margin: 0 auto;
+    position: relative;
+}
+
+button {
+    height: 2rem;
+    width: 2rem;
+    border: none;
+    cursor: pointer;
+    background: #D45245;
+}
+button:hover, button:focus {
+    outline: none;
+    opacity: .9;
+}
+button::-moz-focus-inner {
+    border: 0;
+}
+button:active {
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.2);
+    line-height: 3rem;
+}
+button:disabled {
+    pointer-events: none;
+    background: lightgray;
+}
+button:first-child {
+    margin-left: 0;
+}
+button svg {
+    transform: translateY(-0.05rem);
+    fill: black;
+    width: 1.4rem;
+}
+button:active svg {
+    transform: translateY(0);
+}
+button:disabled svg {
+    fill: #9a9a9a;
+}
+button text {
+    fill: #00e5d2;
+}
+button:hover text, button:focus text {
+    fill: #00ffe9;
+}
+button:disabled text {
+    fill: lightgray;
+}
+#formats, #mode {
+    margin-top: 0.5rem;
+    font-size: 80%;
+}
+#mode {
+    float: right;
+}
+#support {
+    display: none;
+    margin-top: 2rem;
+    color: red;
+    font-weight: bold;
+}
+#list {
+    margin-top: 1.6rem;
+}
+audio {
+    display: block;
+    width: 100%;
+    margin-top: 0.2rem;
+}
+li {
+    list-style: none;
+    margin-bottom: 1rem;
+}
+#controls {
+    display: flex;
+}
+.waveform {
+    position: relative;
+    padding: 0;
+    margin-left: 1em;
+    flex-grow: 1;
+}
+.waveform__canvas {
+    width: 100%;
+    position: relative;
+    z-index: 5;
+}
+
+#timer {
+    text-align: center;
+}
+
+#info {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+}
+#canvas-2 {
+    position: absolute;
+    top: 0;
+    z-index: 4;
+}

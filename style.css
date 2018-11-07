@@ -20,7 +20,7 @@ body {
     font-family: sans-serif;
 }
 article {
-    max-width: 50%;
+    max-width: 35%;
     margin: 0 auto;
     position: relative;
 }
@@ -122,5 +122,79 @@ li {
 #canvas-2 {
     position: absolute;
     top: 0;
+    left: 0;
     z-index: 4;
+}
+.audio-player .controls {
+    display: flex;
+    margin-bottom: .5em;
+}
+
+.audio-player .ctrl-btn {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    float: left;
+}
+
+.audio-player .ctrl-btn:before,
+.audio-player .ctrl-btn:after {
+    content: "";
+    position: absolute;
+    height: 100%;
+    top: 0;
+}
+
+.audio-player .ctrl-btn.fa-play:before {
+    left: 0%;
+    top: 50%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+    border-color: rgba(255, 255, 255, 0);
+    border-left-color: #fff;
+    border-width: 10px;
+    margin-top: -10px;
+}
+
+.audio-player .fa-pause:before,
+.audio-player .fa-pause:after {
+    width: 4px;
+        background: #fff;
+}
+
+.audio-player .fa-pause:before {
+    left: 6px;
+}
+
+.audio-player .fa-pause:before {
+    left: 8px;
+}
+
+.audio-player .progressbar {
+    position: relative;
+    border-top: 2px solid #fff;
+    flex-grow: 1;
+    margin-top: 8px;
+}
+
+.audio-player .progressbar span {
+    width: 15px;
+    height: 15px;
+    border-radius: 100%;
+    background: #fff;
+    position: absolute;
+    top: -8px;
+}
+
+.audio-player .time {
+    float: right;
+}
+
+.audio-player .start-time {
+    float: left;
 }

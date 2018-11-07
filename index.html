@@ -3,20 +3,18 @@
     <head>
         <meta charset="UTF-8">
         <title>Audio Feedback Recorder</title>
-        <link rel="shortcut icon" href="./favicon.ico">
+        <link rel="shortcut icon" href="https://photographer.solutions/app/public/PhotoUp/images/ps_favicon.ico?photographer.solutions">
         <meta content="width=device-width" name="viewport">
-        <meta name="theme-color" content="#00e5d2">
+        <link rel="stylesheet" href="style.css"/>
         <script>
             if (!window.MediaRecorder || /^\?polyfill/.test(location.search)) {
-                document.write(decodeURI('%3Cscript src="./polyfill.js">%3C/script>'))
+                document.write(decodeURI('%3Cscript src="./polyfill.js">%3C/script>'));
             }
         </script>
-        <link rel="stylesheet" href="style.css"/>
     </head>
     <body>
-
         <article>
-            <h3 id="timer"><time>00:00:00</time></h3>
+            <h3 id="timer"><time>00:00</time></h3>
             <div id="controls">
                 <p id="record" title="Record">Record</p>
                 <button id="stop" title="Stop"></button>
@@ -25,14 +23,11 @@
                     <canvas id="canvas-2" class="js-canvas waveform__canvas"></canvas>
                 </div>
             </div>
-
             <div id="support">
                 Your browser doesn’t support MediaRecorder
                 or WebRTC to be able to polyfill MediaRecorder.
             </div>
-            <ul id="list">
-            </ul>
-
+            <ul id="list"></ul>
         </article>
         <div id="info">
             <div id="mode">

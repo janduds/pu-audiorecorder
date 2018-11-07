@@ -6,7 +6,19 @@ var audio_format = null;
 
 // Decibel Meter Vars
 var bars = [];
-var audioContext = new AudioContext();
+var audioContext = window.AudioContext // Default
+    || window.webkitAudioContext // Safari and old versions of Chrome
+    || false; 
+
+if (audioContext) {
+    // Do whatever you want using the Web Audio API
+    var audioContext = new AudioContext();
+    // ...
+} else {
+    // Web Audio API is not supported
+    // Alert the user
+    alert("Sorry, but the Web Audio API is not supported by your browser. Please, consider upgrading to the latest version or downloading Google Chrome or Mozilla Firefox");
+}
 var input = null;
 var analyser = null;
 var scriptProcessor = null;
